@@ -41,7 +41,6 @@ tableDat.set_index('index', inplace=True)
 tableDat = tableDat.replace('NAN', 0)
 
 for col in tableDat.columns:
-    print(col)
     if col != 'TIMESTAMP' or col != 'index':
         tableDat[col] = pd.to_numeric(tableDat[col], errors='ignore')
 
