@@ -118,9 +118,9 @@ for i in zip(query.columns, range(1, len(query.columns))):
             if st.sidebar.checkbox(i[0], key=200+i[1], value=resetAvg):
                 selectedCols.append(i[0])
 
-    if (i[1] < int(len(query.columns)/3)+int(len(query.columns)/3)
+    if (i[1] <= int(len(query.columns)/3)+int(len(query.columns)/3)
         and
-            i[1] > int(len(query.columns)/3)):
+            i[1] >= int(len(query.columns)/3)):
         with col2:
             if st.sidebar.checkbox(i[0], key=200+i[1], value=resetAvg):
                 selectedCols.append(i[0])
