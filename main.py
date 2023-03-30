@@ -73,13 +73,13 @@ tableDat['month'] = [tableDat.TIMESTAMP.iloc[i -
                                              1].month for i in tableDat.index.tolist()]
 # tableDat['year'] = pd.to_datetime(tableDat['year'])
 
-year = tableDat.year.unique()
-month = tableDat.month.unique()
-
 selectYear = ''
-selectMonth = ''
+year = tableDat.year.unique()
 if st.checkbox('enable year selection', key=100):
     selectYear = st.selectbox('select year', year)
+
+selectMonth = ''
+month = tableDat.month.unique()
 if st.checkbox('enable month selection', key=101):
     selectMonth = st.selectbox('select month', month)
 
@@ -102,33 +102,39 @@ st.write(query)
 st.write(
     """
 ----
-### Select columns
+### Selected columns
 """
 )
 
 selectedCols = []
-resetAvg = False
+reset = False
 # st.button('reset', on_click=)
-# st.write(resetAvg)
-col1, col2, col3 = st.columns(3)
+# st.write(reset)
+# col1, col2, col3 = st.columns(3)
+
+# for i in zip(query.columns, range(1, len(query.columns))):
+#     if i[1] < int(len(query.columns)/3):
+#         with col1:
+#             if st.sidebar.checkbox(i[0], key=200+i[1], value=reset):
+#                 selectedCols.append(i[0])
+
+#     if (i[1] <= int(len(query.columns)/3)+int(len(query.columns)/3)
+#         and
+#             i[1] >= int(len(query.columns)/3)):
+#         with col2:
+#             if st.sidebar.checkbox(i[0], key=200+i[1], value=reset):
+#                 selectedCols.append(i[0])
+
+#     if i[1] > int(len(query.columns)/3)+int(len(query.columns)/3):
+#         with col3:
+#             if st.sidebar.checkbox(i[0], key=200+i[1], value=reset):
+#                 selectedCols.append(i[0])
+
 
 for i in zip(query.columns, range(1, len(query.columns))):
-    if i[1] < int(len(query.columns)/3):
-        with col1:
-            if st.sidebar.checkbox(i[0], key=200+i[1], value=resetAvg):
-                selectedCols.append(i[0])
-
-    if (i[1] <= int(len(query.columns)/3)+int(len(query.columns)/3)
-        and
-            i[1] >= int(len(query.columns)/3)):
-        with col2:
-            if st.sidebar.checkbox(i[0], key=200+i[1], value=resetAvg):
-                selectedCols.append(i[0])
-
-    if i[1] > int(len(query.columns)/3)+int(len(query.columns)/3):
-        with col3:
-            if st.sidebar.checkbox(i[0], key=200+i[1], value=resetAvg):
-                selectedCols.append(i[0])
+    with st.sidebar:
+        if st.checkbox(i[0], key=200+i[1], value=reset):
+            selectedCols.append(i[0])
 
 
 # st.table(selectedCols)
@@ -137,10 +143,14 @@ result = pd.DataFrame(selectedCols, columns=['columns'])
 
 
 if len(selectedCols) != 0:
+    dict1 = {'Avg': [], 'Sum': []}
     for i in selectedCols:
-        # st.write(query[i].mean())
-        result['Avg'] = query[i].mean()
-        result['Sum'] = query[i].sum()
+        # dict1['Avg'].append({i: query[i].mean()})
+        dict1['Avg'].append(query[i].mean())
+        dict1['Sum'].append(query[i].sum())
+
+    result['Avg'] = dict1['Avg']
+    result['Sum'] = dict1['Sum']
 
     st.write(
         """
