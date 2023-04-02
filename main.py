@@ -147,25 +147,26 @@ st.table(selectedCols)
 
 
 # ? get results
-result = pd.DataFrame(selectedCols, columns=['columns'])
-
-for key, item in query_dict.items():
-
-    if len(selectedCols) != 0:
-        for i in selectedCols:
-            # st.write(f'{i} - __{key}__')
-            # st.write({'Avg': item[i].mean(), 'Sum': item[i].sum()})
-            # result[key] = {'Avg': item[i].mean(), 'Sum': item[i].sum()}
-            result[key + " \n __Avg__"] = item[i].mean()
-            result[key + ' \n __Sum__'] = item[i].sum()
-
 
 st.write(
     """
     #### Result :
         """
 )
-st.table(result)
+count = 0
+for key, item in query_dict.items():
+    result = pd.DataFrame(selectedCols, columns=['columns'])
+
+    count += 1
+    st.write(f'{count}-  __{key}__')
+    if len(selectedCols) != 0:
+        for i in selectedCols:
+            # st.write({'Avg': item[i].mean(), 'Sum': item[i].sum()})
+            # result[key] = {'Avg': item[i].mean(), 'Sum': item[i].sum()}
+            result[" \n __Avg__"] = item[i].mean()
+            result[' \n __Sum__'] = item[i].sum()
+
+    st.table(result)
 # st.line_chart(result)
 
 exit()
