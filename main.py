@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
+import os
 import pandas as pd
 import streamlit as st
+from util.dat_edit import dat_edit
+from util.preprocess_dat import preprocess_dat
 
-about = """ Developed by [Ala-Alsanea](https://github.com/Ala-Alsanea)"""
 # config
+about = """ Developed by [Ala-Alsanea](https://github.com/Ala-Alsanea) """
 pd.options.display.max_columns = 999
 st.set_page_config(layout='wide',
                    menu_items={'About': about})
@@ -12,51 +15,68 @@ st.set_page_config(layout='wide',
 st.header('parsing .dat file')
 
 #  load .dat file and parse it
-fileDat = st.file_uploader('pick (.dat) file', type=['dat'])
+fileDat = st.file_uploader('pick (.dat) file', type=[
+                           'dat'], accept_multiple_files=True)
 
-if fileDat == None:
+first_lines = []
+if fileDat == None or fileDat == []:
     st.caption(about)
     exit()
 
-lines = fileDat.readlines()
-lines.pop(0)
+for i, item in enumerate(fileDat):
+    first_lines.append(dat_edit(item))
 
-with open("DatEdited/"+fileDat.name, "w") as f:
-    for line in lines:
-        # st.write(line)
-        # if line.strip("\n") != delLine:
-        f.write(line.decode('utf-8'))
-fileDat.close()
-
-# ? show data from DataEdited
-tableDat = pd.read_csv("DatEdited/"+fileDat.name)
-tableDat.drop(0, inplace=True)
-tableDat.drop(1, inplace=True)
-
-# set index
-tableDat['index'] = range(1, len(tableDat)+1)
-tableDat.set_index('index', inplace=True)
-
-# replace missing vlans with 0
-tableDat = tableDat.replace('NAN', 0)
-
-for col in tableDat.columns:
-    if col != 'TIMESTAMP' or col != 'index':
-        tableDat[col] = pd.to_numeric(tableDat[col], errors='ignore')
+first_lines_df = pd.DataFrame()
+st.write('#### Metadata')
+for i, item in enumerate(zip(first_lines, fileDat)):
+    first_lines_df[item[1].name] = str(item[0]).split(',')
 
 
-tableDat['TIMESTAMP'] = pd.to_datetime(tableDat['TIMESTAMP'])
+st.table(first_lines_df)
 
-headShow = st.number_input('Head show', value=5)
-st.write(
-    """
-----
-### first {1} rows of  ({0})
-""".format(fileDat.name, headShow)
-)
+tableDat_dict = {}
+year = []
+month = []
 
-st.dataframe(tableDat.head(int(headShow)))
 
+for i, item in enumerate(fileDat):
+    # ? load from DataEdited
+    tableDat_dict.update({item.name: preprocess_dat(item)})
+
+for key, item in tableDat_dict.items():
+    # st.write(item)
+    # exit()
+    # ? change type of all col except TIMESTAMP and index
+    for col in item.columns:
+        if col != 'TIMESTAMP' or col != 'index':
+            item[col] = pd.to_numeric(
+                item[col], errors='ignore')
+
+# ? change type of TIMESTAMP
+    item['TIMESTAMP'] = pd.to_datetime(
+        item['TIMESTAMP'])
+
+
+# ? separate year and month from Timestamp
+    item['year'] = [item.TIMESTAMP.iloc[j -
+                                        1].year for j in item.index.tolist()]
+    item['month'] = [item.TIMESTAMP.iloc[j -
+                                         1].month for j in item.index.tolist()]
+
+# ? show data
+    if st.checkbox(f'show all data for __{key}__'):
+        st.write(f'#### {key}')
+        st.dataframe(item)
+
+    year.append(item.year.unique())
+    month.append(item.month.unique())
+
+# ? split the arrays inside year and month into one array for each
+year = [j for i in year for j in i]
+year = set(year)
+
+month = [j for i in month for j in i]
+month = set(month)
 
 st.write(
     """
@@ -65,22 +85,14 @@ st.write(
 """
 )
 
-# ? separate year and month from Timestamp
-tableDat['year'] = [tableDat.TIMESTAMP.iloc[i -
-                                            1].year for i in tableDat.index.tolist()]
-tableDat['month'] = [tableDat.TIMESTAMP.iloc[i -
-                                             1].month for i in tableDat.index.tolist()]
-# tableDat['year'] = pd.to_datetime(tableDat['year'])
 
 selectYear = ''
-year = tableDat.year.unique()
-if st.checkbox('enable year selection', key=100):
+selectMonth = ''
+if st.checkbox('enable year selection', key=100, value=True):
     selectYear = st.selectbox('select year', year)
 
-selectMonth = ''
-month = tableDat.month.unique()
-if st.checkbox('enable month selection', key=101):
-    selectMonth = st.selectbox('select month', month)
+    if st.checkbox('enable month selection', key=101):
+        selectMonth = st.selectbox('select month', month)
 
 st.write(
     """
@@ -89,15 +101,30 @@ st.write(
 """.format(selectMonth, selectYear)
 )
 
-query = tableDat[(tableDat['year'] == selectYear)] if (
-    selectYear in tableDat['year'].values) else tableDat
+query_dict = {}
+for key, item in tableDat_dict.items():
 
-query = query[query['month'] == selectMonth] if (
-    selectMonth in query['month'].values) else query
+    st.write(f'#### {key}')
 
-st.write(query)
+    query = item[(item['year'] == selectYear)]
 
-# ? avg and sum
+    query = query[query['month'] == selectMonth] if (
+        selectMonth in item['month'].values) else query
+
+    query_dict.update({key: query})
+    st.write(query)
+    # st.write(query_dict)
+
+
+# ? extract columns
+cols = []
+for item in tableDat_dict.values():
+    cols.append(item.columns)
+
+cols = [j for i in cols for j in i]
+cols = set(cols)
+
+
 st.write(
     """
 ----
@@ -107,54 +134,37 @@ st.write(
 
 selectedCols = []
 reset = False
-# st.button('reset', on_click=)
-# st.write(reset)
-# col1, col2, col3 = st.columns(3)
-
-# for i in zip(query.columns, range(1, len(query.columns))):
-#     if i[1] < int(len(query.columns)/3):
-#         with col1:
-#             if st.sidebar.checkbox(i[0], key=200+i[1], value=reset):
-#                 selectedCols.append(i[0])
-
-#     if (i[1] <= int(len(query.columns)/3)+int(len(query.columns)/3)
-#         and
-#             i[1] >= int(len(query.columns)/3)):
-#         with col2:
-#             if st.sidebar.checkbox(i[0], key=200+i[1], value=reset):
-#                 selectedCols.append(i[0])
-
-#     if i[1] > int(len(query.columns)/3)+int(len(query.columns)/3):
-#         with col3:
-#             if st.sidebar.checkbox(i[0], key=200+i[1], value=reset):
-#                 selectedCols.append(i[0])
 
 
-for i in zip(query.columns, range(1, len(query.columns))):
+st.sidebar.header(f'column No. {len(cols)}')
+for i, value in enumerate(sorted(cols)):
     with st.sidebar:
-        if st.checkbox(i[0], key=200+i[1], value=reset):
-            selectedCols.append(i[0])
+        if st.checkbox(value, key=200+i, value=reset):
+            selectedCols.append(value)
+
+st.table(selectedCols)
 
 
-# st.table(selectedCols)
-# st.write(query['ETo_24Hrs'])
+# ? get results
 result = pd.DataFrame(selectedCols, columns=['columns'])
 
+for key, item in query_dict.items():
 
-if len(selectedCols) != 0:
-    dict1 = {'Avg': [], 'Sum': []}
-    for i in selectedCols:
-        # dict1['Avg'].append({i: query[i].mean()})
-        dict1['Avg'].append(query[i].mean())
-        dict1['Sum'].append(query[i].sum())
+    if len(selectedCols) != 0:
+        for i in selectedCols:
+            # st.write(f'{i} - __{key}__')
+            # st.write({'Avg': item[i].mean(), 'Sum': item[i].sum()})
+            # result[key] = {'Avg': item[i].mean(), 'Sum': item[i].sum()}
+            result[key + " \n __Avg__"] = item[i].mean()
+            result[key + ' \n __Sum__'] = item[i].sum()
 
-    result['Avg'] = dict1['Avg']
-    result['Sum'] = dict1['Sum']
 
-    st.write(
+st.write(
+    """
+    #### Result :
         """
-        #### Result :
-            """
-    )
-    st.table(result)
-    # st.line_chart(result)
+)
+st.table(result)
+# st.line_chart(result)
+
+exit()

@@ -1,3 +1,5 @@
 DatEdited/*
 sub_venv
 test_dat
+__pycache__
+util/__pycache__
