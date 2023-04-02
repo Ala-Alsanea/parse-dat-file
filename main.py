@@ -3,7 +3,8 @@
 import pandas as pd
 import streamlit as st
 
-about = """ Developed by [Ala-Alsanea](https://github.com/Ala-Alsanea)"""
+version = 'v0.1'
+about = f""" Developed by [Ala-Alsanea](https://github.com/Ala-Alsanea) - {version}"""
 # config
 pd.options.display.max_columns = 999
 st.set_page_config(layout='wide',
