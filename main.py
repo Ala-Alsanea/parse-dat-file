@@ -157,14 +157,19 @@ count = 0
 for key, item in query_dict.items():
     result = pd.DataFrame(selectedCols, columns=['columns'])
 
+    avgList = []
+    sumList = []
     count += 1
     st.write(f'{count}-  __{key}__')
     if len(selectedCols) != 0:
         for i in selectedCols:
             # st.write({'Avg': item[i].mean(), 'Sum': item[i].sum()})
             # result[key] = {'Avg': item[i].mean(), 'Sum': item[i].sum()}
-            result[" \n __Avg__"] = item[i].mean()
-            result[' \n __Sum__'] = item[i].sum()
+            avgList.append(item[i].mean())
+            sumList.append(item[i].sum())
+
+        result[" \n __Avg__"] = avgList
+        result[' \n __Sum__'] = sumList
 
     st.table(result)
 # st.line_chart(result)
