@@ -7,7 +7,8 @@ from util.dat_edit import dat_edit
 from util.preprocess_dat import preprocess_dat
 
 # config
-about = """ Developed by [Ala-Alsanea](https://github.com/Ala-Alsanea) v0.2"""
+version = 'v0.2'
+about = f""" Developed by [Ala-Alsanea](https://github.com/Ala-Alsanea) - {version}"""
 pd.options.display.max_columns = 999
 st.set_page_config(layout='wide',
                    menu_items={'About': about})
